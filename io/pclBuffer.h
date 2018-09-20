@@ -158,10 +158,9 @@ class PCLBuffer
     boost::mutex io_mutex;
     boost::condition_variable buff_empty_;
     boost::circular_buffer<typename PointCloud<PointT>::ConstPtr> buffer_;
-    PCDBuffer<PointT> &buf_;
     boost::shared_ptr<boost::thread> thread_p;
     boost::shared_ptr<boost::thread> thread_c;
-    PCDWriter writer_;
+    pcl::PCDWriter writer_;
 };
 
 #endif
