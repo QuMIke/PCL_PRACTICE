@@ -69,7 +69,7 @@ class PCLBuffer
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> bool 
-PCDBuffer<PointT>::pushBack (typename pcl::PointCloud<PointT>::ConstPtr cloud)
+PCLBuffer<PointT>::pushBack (typename pcl::PointCloud<PointT>::ConstPtr cloud)
 {
   bool retVal = false;
   {
@@ -84,7 +84,7 @@ PCDBuffer<PointT>::pushBack (typename pcl::PointCloud<PointT>::ConstPtr cloud)
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> typename PointCloud<PointT>::ConstPtr 
-PCDBuffer<PointT>::getFront ()
+PCLBuffer<PointT>::getFront ()
 {
   typename PointCloud<PointT>::ConstPtr cloud;
   {
