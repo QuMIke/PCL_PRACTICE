@@ -1,3 +1,7 @@
+ /* 
+  *  Reference:pcl/io/tools/openni_pcd_recorder.cpp
+  *  All rights reserved.
+  */
 #ifndef MY_PCL_BUFFER_H
 #define MY_PCL_BUFFER_H
 
