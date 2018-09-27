@@ -2,8 +2,10 @@
 #ifndef  MY_POINT_CLOUD_GRABBER_H
 #define MY_POINT_CLOUD_GRABBER_H
 
+#include <sstream>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/console/print.h>
 #include <pcl/io/openni2_grabber.h>
 #include <pcl/visualization/cloud_viewer.h>
@@ -37,6 +39,7 @@ private:
 	bool if_save = false;
 	static cloudGrabber* m_instance;
 	boost::mutex bmutex_;
+	pcl::PCDWriter writer_;
 	pcl::io::OpenNI2Grabber grabber_;
 	typename pcl::PointCloud<PointT>::Ptr cloud_;
 	boost::shared_ptr<pcl::visualization::CloudViewer> viewer_;	
