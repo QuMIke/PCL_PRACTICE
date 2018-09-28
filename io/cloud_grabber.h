@@ -17,7 +17,7 @@ class cloudGrabber
 public:
 	inline bool setSaveFlag(bool flag)
 	{
-		if_vis = flag;
+		if_save_cloud = flag;
 	};
 	inline bool setVizCloudFlag(bool flag)
 	{
