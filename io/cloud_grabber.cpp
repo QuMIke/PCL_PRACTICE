@@ -179,4 +179,4 @@ template<typename PointT> void
 			std::cout << " pressed." << std::endl;
 		else
 			std::cout << " released." << std::endl;
-}
+	}
