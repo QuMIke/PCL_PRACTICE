@@ -1,8 +1,10 @@
 #include "stdafx.h"
-#include <pcl/console/time.h>
+#include <pcl/common/time.h>
 
 #define MEASURE_FUNCTION_TIME
 
+#define SHOW_FPS 1
+#if SHOW_FPS
 #define FPS_CALC(_WHAT_) \
 do \
 { \
@@ -17,3 +19,9 @@ do \
       last = now; \
     } \
 }while(false)
+#else
+#define FPS_CALC (_WHAT_) \
+  do \
+{ \
+}while (false)
+#endif
