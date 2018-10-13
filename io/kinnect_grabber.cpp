@@ -3,64 +3,109 @@
 
 template<typename PointT> void
 	kinnectGrabber<PointT>::run(void)
-	{
-		std::string mouseMsg3D("Mouse coordinates in PCL Visualizer");
-		std::string keyMsg3D("Key event for PCL Visualizer");
-		cloud_viewer_.registerMouseCallback(&kinnectGrabber<PointT>::mouse_callback, *this, (void*)(&mouseMsg3D));
-		cloud_viewer_.registerKeyboardCallback(&kinnectGrabber<PointT>::keyboard_callback, *this, (void*)(&keyMsg3D));
-		boost::function<void(const pcl::PointCloud<PointT>::ConstPtr&) > cloud_cb = boost::bind(&kinnectGrabber<PointT>::cloud_callback, this, _1);
+	{	
+		cloud_viewer_->registerMouseCallback(&kinnectGrabber::mouse_callback, *this);
+		cloud_viewer_->registerKeyboardCallback(&kinnectGrabber::keyboard_callback, *this);
+		cloud_viewer_->setCameraFieldOfView(1.02259994f);
+		boost::function<void(const pcl::PointCloud<PointT>::ConstPtr&) > cloud_cb = boost::bind(&kinnectGrabber::cloud_callback, this, _1);
 		boost::signals2::connection cloud_connection = grabber_.registerCallback(cloud_cb);
 
 		boost::signals2::connection rgb_image_connection;
-		if (grabber_.providesCallback<void(const boost::shared_ptr<pcl::io::Image>&)>())
+		if (grabber_.providesCallback<void(const boost::shared_ptr<pcl::io::openni2::Image>&)>())
 		{
 			std::string mouseMsg2D("Mouse coordinates in rgb image viewer");
 			std::string keyMsg2D("Key event for rgb image viewer");
-			rgb_viewer_.registerMouseCallback(&kinnectGrabber<PointT>::mouse_callback, *this, (void*)(&mouseMsg2D));
-			rgb_viewer_.registerKeyboardCallback(&kinnectGrabber<PointT>::keyboard_callback, *this, (void*)(&keyMsg2D));
-			boost::function<void(const boost::shared_ptr<pcl::io::Image>&) > rgb_img_cb = boost::bind(&kinnectGrabber<PointT>::rgb_image_callback, this, _1);
+			rgb_viewer_.reset(new pcl::visualization::ImageViewer("PCL OpenNI rgb image"));
+			rgb_viewer_->registerMouseCallback(&kinnectGrabber::mouse_callback, *this, (void*)(&mouseMsg2D));
+			rgb_viewer_->registerKeyboardCallback(&kinnectGrabber::keyboard_callback, *this, (void*)(&keyMsg2D));
+			boost::function<void(const boost::shared_ptr<pcl::io::openni2::Image>&) > rgb_img_cb = boost::bind(&kinnectGrabber::rgb_image_callback, this, _1);
 			rgb_image_connection = grabber_.registerCallback(rgb_img_cb);
 		}
 
 		boost::signals2::connection depth_image_connection;
-		if (grabber_.providesCallback<void(const boost::shared_ptr<pcl::io::DepthImage>&)>())
+		if (grabber_.providesCallback<void(const boost::shared_ptr<pcl::io::openni2::DepthImage>&)>())
 		{
 			std::string mouseMsg2D("Mouse coordinates in depth image viewer");
 			std::string keyMsg2D("Key event for depth image viewer");
-			depth_viewer_.registerMouseCallback(&kinnectGrabber<PointT>::mouse_callback, *this, (void*)(&mouseMsg2D));
-			depth_viewer_.registerKeyboardCallback(&kinnectGrabber<PointT>::keyboard_callback, *this, (void*)(&keyMsg2D));
-			boost::function<void(const boost::shared_ptr<pcl::io::DepthImage>&) > depth_img_cb = boost::bind(&kinnectGrabber<PointT>::depth_image_callback, this, _1);
+			rgb_viewer_.reset(new pcl::visualization::ImageViewer("PCL OpenNI depth image"));
+			depth_viewer_->registerMouseCallback(&kinnectGrabber<PointT>::mouse_callback, *this, (void*)(&mouseMsg2D));
+			depth_viewer_->registerKeyboardCallback(&kinnectGrabber<PointT>::keyboard_callback, *this, (void*)(&keyMsg2D));
+			boost::function<void(const boost::shared_ptr<pcl::io::openni2::DepthImage>&) > depth_img_cb = boost::bind(&kinnectGrabber<PointT>::depth_image_callback, this, _1);
 			depth_image_connection = grabber_.registerCallback(depth_img_cb);
 		}
 
+		bool image_init = false, depth_init = false, cloud_init = false;
 		grabber_.start();
 
-		while (!cloud_viewer_.wasStopped(1) && !rgb_viewer_.wasStopped() && !depth_viewer_.wasStopped())
+		while (!cloud_viewer_->wasStopped() && !rgb_viewer_->wasStopped())
 		{
-			if (cloud_ && if_viz_cloud)
+			pcl::PointCloud<PointT>::ConstPtr cloud;
+			cloud_viewer_->spinOnce();
+			if (cloud_mutex_.try_lock())
+			{
+				cloud_.swap(cloud);
+				cloud_mutex_.unlock();
+			}
+			if (cloud && if_viz_cloud)
 			{
 				FPS_CALC("drawing cloud");
+				if (!cloud_init)
+				{
+					cloud_viewer_->setPosition(0, 0);
+					cloud_viewer_->setSize(cloud->width, cloud->height);
+					cloud_init = !cloud_init;
+				}
 				//the call to get() sets the cloud_ to null;
-				cloud_viewer_.showCloud(getLatestCloud());
+				if (!cloud_viewer_->updatePointCloud(cloud, "OpenNICloud"))
+				{
+					cloud_viewer_->addPointCloud(cloud, "OpenNICloud");
+					cloud_viewer_->resetCameraViewpoint("OpenNICloud");
+					cloud_viewer_->setCameraPosition(
+						0, 0, 0,		// Position
+						0, 0, 1,		// Viewpoint
+						0, -1, 0);	// Up
+				}
 			}
 
-			if (rgb_image_ && if_viz_rgb)
+			boost::shared_ptr<pcl::io::openni2::Image> image;
+			if (rgb_mutex_.try_lock())
 			{
-				boost::shared_ptr<pcl::io::Image> rgb_image = getLatestRGBImg();
-				rgb_viewer_.showRGBImage(rgb_image->getData(), rgb_image->getWidth(), rgb_image->getHeight());
+				rgb_image_.swap(image);
+				rgb_mutex_.unlock();
+			}
+			if (image && if_viz_rgb)
+			{
+				if (!image_init && cloud && cloud->width != 0)
+				{
+					rgb_viewer_->setPosition(cloud->width, 0);
+					rgb_viewer_->setSize(cloud->width, cloud->height);
+					image_init = !image_init;
+				}
+
+				if (image->getEncoding() == pcl::io::openni2::Image::RGB)
+					rgb_viewer_->addRGBImage((const unsigned char*)image->getData(), image->getWidth(), image->getHeight());
+				rgb_viewer_->spinOnce();
 			}        
 
+			boost::shared_ptr<pcl::io::openni2::DepthImage> depth;
+			if (depth_mutex_.try_lock())
+			{
+				depth_image_.swap(depth);
+				depth_mutex_.unlock();
+			}
 			if (depth_image_ && if_viz_depth)
 			{
-				boost::shared_ptr<pcl::io::DepthImage> depth_image = getLatestDepthImg();
-				depth_viewer_.showRGBImage(depth_image->getData(), depth_image->getWidth(), depth_image->getHeight());
+				if (!depth_init && cloud && cloud->width != 0)
+				{
+					depth_viewer_->setPosition(cloud->width, 0);
+					depth_viewer_->setSize(cloud->width, cloud->height);
+					depth_init = !depth_init;
+				}
+				depth_viewer_->addMonoImage((const unsigned char*)depth->getData(), depth->getWidth(), depth->getHeight());
+				depth_viewer_->spinOnce();
 			}
-		}
-	}
+		}		
 
-template<typename PointT> void
-	kinnectGrabber<PointT>::stop(void)
-	{	
 		grabber_.stop();
 		cloud_connection.disconnect();
 		rgb_image_connection.disconnect(); 
@@ -79,8 +124,8 @@ template <typename PointT> typename pcl::PointCloud<PointT>::ConstPtr
 template <typename PointT> boost::shared_ptr<pcl::io::Image>
 	kinnectGrabber<PointT>::getLatestRGBImg(void)
 	{	
-		boost::mutex::scoped_lock lock(image_mutex_);
-		boost::shared_ptr<pcl::io::Image> temp_image;
+		boost::mutex::scoped_lock lock(rgb_mutex_);
+		boost::shared_ptr<pcl::io::openni2::Image> temp_image;
 		temp_image.swap(rgb_image_);
 		return (temp_image);
 	}
@@ -90,7 +135,7 @@ template <typename PointT> boost::shared_ptr<pcl::io::DepthImage>
 	{
 		boost::mutex::scoped_lock lock(depth_mutex_);
 		boost::shared_ptr<pcl::io::DepthImage> temp_depth;
-		temp_image.swap(depth_image_);
+		temp_depth.swap(depth_image_);
 		return (temp_depth);
 	}
 
@@ -155,11 +200,10 @@ template<typename PointT> void
 template<typename PointT> void
 	kinnectGrabber<PointT>::mouse_callback(const pcl::visualization::MouseEvent& mouse_event, void* cookie)
 	{
-		std::string* message = (string*)cookie;
 		if (mouse_event.getType() == pcl::visualization::MouseEvent::MouseButtonPress && mouse_event.getButton() == pcl::visualization::MouseEvent::LeftButton)
 		{
-			std::cout << (*message) << " :: " << mouse_event.getX() << " , " << mouse_event.getY() << std::endl;
-		}	
+			std::cout << "left button pressed @ " << mouse_event.getX() << " , " << mouse_event.getY() << std::endl;
+		}
 	}
 
 template<typename PointT> void
@@ -174,4 +218,3 @@ template<typename PointT> void
 		else
 			std::cout << " released." << std::endl;
 	}
-
