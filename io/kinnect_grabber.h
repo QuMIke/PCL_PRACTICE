@@ -1,85 +1,165 @@
 #pragma once
-#ifndef  MY_POINT_CLOUD_GRABBER_H
-#define MY_POINT_CLOUD_GRABBER_H
-
-#include "basic_func.h"
-#include <sstream>
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/png_io.h>
-#include <pcl/console/print.h>
+#include <pcl/point_types.h>
+#include <pcl/common/time.h> //fps calculations
 #include <pcl/io/openni2_grabber.h>
-#include <pcl/visualization/image_viewer.h>
 #include <pcl/visualization/cloud_viewer.h>
-#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/visualization/image_viewer.h>
+#include <pcl/console/parse.h>
+#include <pcl/visualization/boost.h>
+#include <pcl/visualization/mouse_event.h>
+#include <vtkImageViewer.h>
+#include <vtkImageImport.h>
+#include <string>
+#include "basic_func.h"
 
+using namespace std;
 
-template <typename PointT>
-class kinnectGrabber 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template <typename PointType>
+class KinnectGrabber
 {
 public:
-	kinnectGrabber(pcl::io::OpenNI2Grabber& grabber)
+	typedef pcl::PointCloud<PointType> Cloud;
+	typedef typename Cloud::ConstPtr CloudConstPtr;
+
+	KinnectGrabber(pcl::io::OpenNI2Grabber& grabber)
 		: grabber_(grabber)
-		, cloud_viewer_(new pcl::visualization::PCLVisualizer("PCL OpenNI2 cloud"))
-		, rgb_viewer_()
-		, depth_viewer_()
+		, rgb_data_(0), rgb_data_size_(0)
 	{
-	};
-	inline void setSaveFlag(bool flag)
+	}
+
+	void
+		cloud_callback(const CloudConstPtr& cloud)
 	{
-		if_save_cloud = flag;
-	};
-	inline void setVizCloudFlag(bool flag)
+		FPS_CALC("cloud callback");
+		boost::mutex::scoped_lock lock(cloud_mutex_);
+		cloud_ = cloud;
+	}
+
+	CloudConstPtr
+		getLatestCloud()
 	{
-		if_viz_depth = flag;
-	};
-	inline void setVizRGBFlag(bool flag)
+		//lock while we swap our cloud and reset it.
+		boost::mutex::scoped_lock lock(cloud_mutex_);
+		CloudConstPtr temp_cloud;
+		temp_cloud.swap(cloud_); //here we set cloud_ to null, so that
+								 //it is safe to set it again from our
+								 //callback
+		return (temp_cloud);
+	}
+
+	void
+		image_callback(const boost::shared_ptr<pcl::io::openni2::Image>& image)
 	{
-		if_viz_rgb = flag;
-	};
-	inline void setVizDepthFlag(bool flag)
+		FPS_CALC("image callback");
+		boost::mutex::scoped_lock lock(image_mutex_);
+		image_ = image;
+
+		if (image->getEncoding() != pcl::io::openni2::Image::RGB)
+		{
+			if (rgb_data_size_ < image->getWidth() * image->getHeight())
+			{
+				if (rgb_data_)
+					delete[] rgb_data_;
+				rgb_data_size_ = image->getWidth() * image->getHeight();
+				rgb_data_ = new unsigned char[rgb_data_size_ * 3];
+			}
+			image_->fillRGB(image_->getWidth(), image_->getHeight(), rgb_data_);
+		}
+	}
+
+	boost::shared_ptr<pcl::io::openni2::Image>
+	getLatestImage()
 	{
-		if_viz_cloud = flag;
-	};
-public:
-	void run(void);
-	typename pcl::PointCloud<PointT>::ConstPtr getLatestCloud(void);	
-	boost::shared_ptr<pcl::io::openni2::Image> getLatestRGBImg(void);
-	boost::shared_ptr<pcl::io::openni2::DepthImage> getLatestDepthImg(void);	
-	void saveCLoud2Disk();
-	void saveRGBImg2Disk(const std::string& file_name);
-	void saveDepthImg2Disk(const std::string& file_name);
-private:
-	kinnectGrabber(const kinnectGrabber&);
-	kinnectGrabber& operator=(const kinnectGrabber&);
-	void cloud_callback(typename const pcl::PointCloud<PointT>::ConstPtr cloud);
-	void rgb_image_callback(const boost::shared_ptr<pcl::io::Image>& rgb);
-	void depth_image_callback(const boost::shared_ptr<pcl::io::DepthImage>& depth);
-	void mouse_callback(const pcl::visualization::MouseEvent& mouse_event, void* cookie);
-	void keyboard_callback(const pcl::visualization::KeyboardEvent& event, void* cookie);
-private:
-	pcl::PCDWriter writer_;
+		boost::mutex::scoped_lock lock(image_mutex_);
+		boost::shared_ptr<pcl::io::openni2::Image> temp_image;
+		temp_image.swap(image_);
+		return (temp_image);
+	}
+
+	void
+		depth_callback(const boost::shared_ptr<pcl::io::openni2::DepthImage>& depth)
+	{
+		FPS_CALC("depth callback");
+		boost::mutex::scoped_lock lock(depth_mutex_);
+		depth_ = depth;
+	}
+
+	boost::shared_ptr<pcl::io::openni2::DepthImage>
+		getLatestDepth()
+	{
+		boost::mutex::scoped_lock lock(depth_mutex_);
+		boost::shared_ptr<pcl::io::openni2::DepthImage> temp_depth;
+		temp_depth.swap(depth_);
+		return (temp_depth);
+	}
+
+	void
+		keyboard_callback(const pcl::visualization::KeyboardEvent& event, void*)
+	{
+		if (event.getKeyCode())
+			cout << "the key \'" << event.getKeyCode() << "\' (" << event.getKeyCode() << ") was";
+		else
+			cout << "the special key \'" << event.getKeySym() << "\' was";
+		if (event.keyDown())
+			cout << " pressed" << endl;
+		else
+			cout << " released" << endl;
+	}
+
+	void
+		mouse_callback(const pcl::visualization::MouseEvent& mouse_event, void*)
+	{
+		if (mouse_event.getType() == pcl::visualization::MouseEvent::MouseButtonPress && mouse_event.getButton() == pcl::visualization::MouseEvent::LeftButton)
+		{
+			cout << "left button pressed @ " << mouse_event.getX() << " , " << mouse_event.getY() << endl;
+		}
+	}
+
+	void
+		run()
+	{
+		is_start = true;
+
+		boost::function<void(const CloudConstPtr&) > cloud_cb = boost::bind(&KinnectGrabber::cloud_callback, this, _1);
+		cloud_connection = grabber_.registerCallback(cloud_cb);
+
+		if (grabber_.providesCallback<void(const boost::shared_ptr<pcl::io::openni2::Image>&)>())
+		{
+			boost::function<void(const boost::shared_ptr<pcl::io::openni2::Image>&) > image_cb = boost::bind(&KinnectGrabber::image_callback, this, _1);
+			image_connection = grabber_.registerCallback(image_cb);
+		}
+
+		if (grabber_.providesCallback<void(const boost::shared_ptr<pcl::io::openni2::DepthImage>&)>())
+		{
+			boost::function<void(const boost::shared_ptr<pcl::io::openni2::DepthImage>&) > depth_cb = boost::bind(&KinnectGrabber::depth_callback, this, _1);
+			depth_connection = grabber_.registerCallback(depth_cb);
+		}
+
+		grabber_.start();
+		boost::this_thread::sleep(boost::posix_time::seconds(2));
+		grabber_.stop();
+		cloud_connection.disconnect();
+		image_connection.disconnect();
+		depth_connection.disconnect();
+	}
+
+private:	
+	bool is_start = false;
 	pcl::io::OpenNI2Grabber& grabber_;
 private:
+	CloudConstPtr cloud_;
 	boost::mutex cloud_mutex_;
-	bool if_save_cloud = false;
-	bool if_viz_cloud = true;
-	typename pcl::PointCloud<PointT>::ConstPtr cloud_ = nullptr;
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
-private:
-	boost::mutex rgb_mutex_;
-	bool if_viz_rgb = true;
-	bool if_save_rgb = false;
-	boost::shared_ptr<pcl::io::openni2::Image> rgb_image_ = nullptr;
-	boost::shared_ptr<pcl::visualization::ImageViewer> rgb_viewer_;
-private:
-	boost::mutex depth_mutex_;	
-	bool if_viz_depth = true;
-	bool if_save_depth = false;
-	boost::shared_ptr<pcl::io::openni2::DepthImage> depth_image_ = nullptr;
-	boost::shared_ptr<pcl::visualization::ImageViewer> depth_viewer_;
+	boost::signals2::connection cloud_connection;
+
+	boost::mutex image_mutex_;
+	boost::signals2::connection image_connection;
+	boost::shared_ptr<pcl::io::openni2::Image> image_;
+	unsigned char* rgb_data_;
+	unsigned rgb_data_size_;
+
+	boost::mutex depth_mutex_;
+	boost::signals2::connection depth_connection;
+	boost::shared_ptr<pcl::io::openni2::DepthImage> depth_;
 };
-
-
-#endif // ! MY_POINT_CLOUD_GRABBER_H
