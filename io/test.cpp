@@ -4,7 +4,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <pcl/visualization/cloud_viewer.h>
-#include "simpleGrabber.h"
+#include "KinnectGrabber.h"
 
 int main()
 {
@@ -35,13 +35,21 @@ int main()
 			0, -1, 0);	// Up
 	}
 
-	boost::shared_ptr<pcl::io::openni2::Image> rgb_ptr =  v.getLatestImage();
-	cv::Mat mImageRGB = cv::Mat(rgb_ptr->getHeight(), rgb_ptr->getWidth(), CV_8UC3, (void*)rgb_ptr->getData());
-	// 首先将RGB格式转换为BGR格式
-	cv::Mat cImageBGR;
-	cv::cvtColor(mImageRGB, cImageBGR, CV_RGB2BGR);
-	// 然后显示彩色图像
-	cv::imshow("Color Image", cImageBGR);
+	boost::shared_ptr<pcl::io::openni2::Image> rgb_ptr = nullptr;
+	rgb_ptr = v.getLatestImage();
+	if (rgb_ptr == nullptr)
+	{
+		std::cout << "Get image failed!" << std::endl;
+	}
+	else
+	{
+		cv::Mat mImageRGB = cv::Mat(rgb_ptr->getHeight(), rgb_ptr->getWidth(), CV_8UC3, (void*)rgb_ptr->getData());
+		// 首先将RGB格式转换为BGR格式
+		cv::Mat cImageBGR;
+		cv::cvtColor(mImageRGB, cImageBGR, CV_RGB2BGR);
+		// 然后显示彩色图像
+		cv::imshow("Color Image", cImageBGR);
+	}
 
 	boost::shared_ptr<pcl::io::openni2::DepthImage> depth_ptr = nullptr;
 	depth_ptr = v.getLatestDepth();
@@ -52,8 +60,10 @@ int main()
 	else
 	{
 		cv::Mat mImageDepth = cv::Mat(depth_ptr->getHeight(), depth_ptr->getWidth(), CV_16UC1, (void*)depth_ptr->getData());
+		double maxVal, minVal;
+		cv::minMaxIdx(mImageDepth, &minVal, &maxVal);
 		cv::Mat mScaledDepth;
-		mImageDepth.convertTo(mScaledDepth, CV_8U);
+		mImageDepth.convertTo(mScaledDepth, CV_8U, 255./maxVal);
 		// 显示出深度图像
 		cv::imshow("Depth Image", mScaledDepth);
 	}
@@ -61,4 +71,3 @@ int main()
 	cv::waitKey(0);
     return 0;
 }
-
