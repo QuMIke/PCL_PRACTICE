@@ -3,13 +3,7 @@
 #include <pcl/point_types.h>
 #include <pcl/common/time.h> //fps calculations
 #include <pcl/io/openni2_grabber.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/visualization/image_viewer.h>
 #include <pcl/console/parse.h>
-#include <pcl/visualization/boost.h>
-#include <pcl/visualization/mouse_event.h>
-#include <vtkImageViewer.h>
-#include <vtkImageImport.h>
 #include <string>
 #include "basic_func.h"
 
