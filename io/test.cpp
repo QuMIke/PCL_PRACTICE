@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+#include <pcl/visualization/cloud_viewer.h>
 #include "simpleGrabber.h"
 
 int main()
