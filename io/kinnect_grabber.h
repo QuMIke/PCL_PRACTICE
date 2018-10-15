@@ -90,28 +90,6 @@ public:
 	}
 
 	void
-		keyboard_callback(const pcl::visualization::KeyboardEvent& event, void*)
-	{
-		if (event.getKeyCode())
-			cout << "the key \'" << event.getKeyCode() << "\' (" << event.getKeyCode() << ") was";
-		else
-			cout << "the special key \'" << event.getKeySym() << "\' was";
-		if (event.keyDown())
-			cout << " pressed" << endl;
-		else
-			cout << " released" << endl;
-	}
-
-	void
-		mouse_callback(const pcl::visualization::MouseEvent& mouse_event, void*)
-	{
-		if (mouse_event.getType() == pcl::visualization::MouseEvent::MouseButtonPress && mouse_event.getButton() == pcl::visualization::MouseEvent::LeftButton)
-		{
-			cout << "left button pressed @ " << mouse_event.getX() << " , " << mouse_event.getY() << endl;
-		}
-	}
-
-	void
 		run()
 	{
 		is_start = true;
