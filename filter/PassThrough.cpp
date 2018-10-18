@@ -3,9 +3,6 @@
 
 #include "stdafx.h"
 #include <stdlib.h>
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
 #include "KinnectGrabber.h"
