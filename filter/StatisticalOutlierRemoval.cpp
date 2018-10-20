@@ -1,3 +1,8 @@
+/*The number of neighbors to analyze for each point is set to 50, and the standard deviation multiplier to 1. 
+What this means is that all points who have a distance larger than 1 standard deviation of the mean distance to the query point 
+will be marked as outliers and removed.
+The output is computed and stored in cloud_filtered.*/
+
 #include "stdafx.h"
 #include <iostream>
 #include <pcl/point_types.h>
