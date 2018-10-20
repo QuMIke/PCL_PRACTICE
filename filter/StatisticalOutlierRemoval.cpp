@@ -42,7 +42,6 @@ int main()
 
 		pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGBA>);
 
-		// creaate the filtering object
 		// Create the filtering object
 		pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBA> sor;
 		sor.setInputCloud(cloud);
