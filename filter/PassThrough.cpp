@@ -2,6 +2,7 @@
 perform a simple filtering along a specified dimension – that is,
 cut off values that are either inside or outside a given user range.
 */
+
 #include "stdafx.h"
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
