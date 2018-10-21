@@ -9,7 +9,6 @@ which removes all indices in the given input cloud that do not satisfy one or mo
 #include "stdafx.h"
 #include <iostream>
 #include <pcl/point_types.h>
-#include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/filters/conditional_removal.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include "KinnectGrabber.h"
