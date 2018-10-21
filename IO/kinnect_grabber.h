@@ -110,8 +110,8 @@ public:
 		}
 
 		grabber_.start();
-		boost::this_thread::sleep(boost::posix_time::seconds(2));
-		grabber_.stop();
+		boost::this_thread::sleep(boost::posix_time::seconds(2)); // important! interval time for io synchronize， if not  you may only get rgb without depth and cloud!!!
+ 		grabber_.stop();
 		cloud_connection.disconnect();
 		image_connection.disconnect();
 		depth_connection.disconnect();
