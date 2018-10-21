@@ -13,7 +13,7 @@ int main()
 	pcl::PCDReader reader;
 	// replace the path below with the path where you saved your file
 	reader.read("table_scene_lms400.pcd", *cloud);
-	std::cerr << "PointCloud befre filtering: " << cloud->width * cloud->height
+	std::cerr << "PointCloud before filtering: " << cloud->width * cloud->height
 		<< "  data points(" << pcl::getFieldsList(*cloud) << ")." << std::endl;
 	// creaate the filtering object
 	pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
