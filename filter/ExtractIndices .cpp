@@ -43,7 +43,7 @@ int main()
 			0, 0, 0,		// Position
 			0, 0, 1,		// Viewpoint
 			0, -1, 0);	// Up
-		std::cerr << "PointCloud befre filtering: " << cloud->width * cloud->height
+		std::cerr << "PointCloud before filtering: " << cloud->width * cloud->height
 			<< " data points(" << pcl::getFieldsList(*cloud) << ")." << std::endl;
 
 		pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGBA>);
