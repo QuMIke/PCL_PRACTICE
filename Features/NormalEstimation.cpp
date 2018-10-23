@@ -43,19 +43,6 @@ int main()
 		// Compute the features
 		ne.compute(*cloud_normals);
 
-		boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer(new pcl::visualization::PCLVisualizer("captured cloud"));
-		cloud_viewer->setCameraFieldOfView(1.02259994f);
-		cloud_viewer->spinOnce();
-		cloud_viewer->setPosition(0, 0);
-		cloud_viewer->setSize(cloud->width, cloud->height);
-		cloud_viewer->addPointCloud(cloud, "captured cloud");
-		cloud_viewer->resetCameraViewpoint("captured cloud");
-		cloud_viewer->setCameraPosition(
-			0, 0, 0,		// Position
-			0, 0, 1,		// Viewpoint
-			0, -1, 0);	// Up
-		cloud_viewer->addPointCloudNormals<pcl::PointXYZRGBA, pcl::Normal>(cloud, cloud_normals, 10, 0.05, "captured cloud");
-
 	}
 
 	return 0;
