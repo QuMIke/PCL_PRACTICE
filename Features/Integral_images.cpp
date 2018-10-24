@@ -10,10 +10,6 @@ In this tutorial we will learn how to compute normals for an organized point clo
 #include <pcl/visualization/cloud_viewer.h>
 #include "KinnectGrabber.h"
 
-
-#define vtkRenderingCore_AUTOINIT 3(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingOpenGL)
-
-
 int main()
 {
 	pcl::io::OpenNI2Grabber grabber;
