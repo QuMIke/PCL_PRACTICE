@@ -9,7 +9,6 @@ As previously mentioned, a good usecase for this is when the input is a downsamp
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/visualization/cloud_viewer.h>
 #include "KinnectGrabber.h"
 
 int main()
