@@ -56,7 +56,7 @@ int main()
 		pcl::search::KdTree<pcl::PointXYZRGBA>::Ptr tree_f(new pcl::search::KdTree<pcl::PointXYZRGBA>);
 		vfh_e.setSearchMethod(tree_f);
 
-		// Use all neighbors in a sphere of radius 5cm
+		// Use all neighbors in a sphere of radius 2cm
 		// IMPORTANT: the radius used here has to be larger than the radius used to estimate the surface normals!!!
 		vfh_e.setRadiusSearch(0.02);
 
