@@ -44,10 +44,10 @@ int main()
 	else
 	{
 		cv::Mat mImageRGB = cv::Mat(rgb_ptr->getHeight(), rgb_ptr->getWidth(), CV_8UC3, (void*)rgb_ptr->getData());
-		// 首先将RGB格式转换为BGR格式
+		// transform RGB to BGR
 		cv::Mat cImageBGR;
 		cv::cvtColor(mImageRGB, cImageBGR, CV_RGB2BGR);
-		// 然后显示彩色图像
+		// display color image
 		cv::imshow("Color Image", cImageBGR);
 	}
 
@@ -64,7 +64,7 @@ int main()
 		cv::minMaxIdx(mImageDepth, &minVal, &maxVal);
 		cv::Mat mScaledDepth;
 		mImageDepth.convertTo(mScaledDepth, CV_8U, 255./maxVal);
-		// 显示出深度图像
+		// display depth image
 		cv::imshow("Depth Image", mScaledDepth);
 	}
 
