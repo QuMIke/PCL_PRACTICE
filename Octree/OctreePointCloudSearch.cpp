@@ -27,9 +27,9 @@ int main()
 	else
 	{
 		pcl::PointXYZ searchPoint;
-		searchPoint.x = 1024.0f * rand() / (RAND_MAX + 1.0f);
-		searchPoint.y = 1024.0f * rand() / (RAND_MAX + 1.0f);
-		searchPoint.z = 1024.0f * rand() / (RAND_MAX + 1.0f);
+		searchPoint.x = 512.0f * rand() / (RAND_MAX + 1.0f); // watch out search point must be within cloud's size!
+		searchPoint.y = 128.0f * rand() / (RAND_MAX + 1.0f);
+		searchPoint.z = 512.0f * rand() / (RAND_MAX + 1.0f);
 
 		float resolution = 128.0f;
 		pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> octree(resolution);
