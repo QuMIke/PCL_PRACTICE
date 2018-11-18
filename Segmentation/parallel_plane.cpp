@@ -43,8 +43,33 @@ int main()
 	ne.compute(*cloud_normals);
 
 	// Create the segmentation objects and set all params
+	pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> seg;
+	seg.setOptimizeCoefficients(true);
+	seg.setMethodType(pcl::SACMODEL_PARALLEL_PLANE);
+	seg.setModelType(pcl::SAC_RANSAC);
+	seg.setMaxIterations(100);
+	seg.setDistanceThreshold(0.02);
+	seg.setInputCloud(cloud_filtered);
+	seg.setInputNormals(cloud_normals);
 
+	// Obtain the plane inliers and coefficients
+	pcl::ModelCoefficients::Ptr coefficients_plane(new pcl::ModelCoefficients);
+	pcl::PointIndices::Ptr inliers_plane(new pcl::PointIndices);
+	seg.segment(*inliers_plane, *coefficients_plane);
+	std::cerr << "Plane coefficients: " << *coefficients_plane << std::endl;
 
+	// Extract the planar inliers from the input cloud
+	pcl::ExtractIndices<pcl::PointXYZ> extract;
+	extract.setInputCloud(cloud_filtered);
+	extract.setIndices(inliers_plane);
+	extract.setNegative(false);
+
+	// Obtain the plane point cloud
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_planes(new pcl::PointCloud<pcl::PointXYZ>());
+	extract.filter(*cloud_planes);
+	
+	pcl::visualization::CloudViewer p_viewer("paralle planes cloud");
+	p_viewer.showCloud(cloud_planes);
 
 	system("pause");
 
