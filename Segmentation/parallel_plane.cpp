@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <math.h>
 #include <stdlib.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -33,6 +34,8 @@ int main()
 	//pcl::visualization::CloudViewer f_viewer("filtered cloud");
 	//f_viewer.showCloud(cloud_filtered);
 
+	// using BilateralFilter filtering point cloud before computing normals
+	
 	// Estimate normals
 	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
@@ -71,6 +74,17 @@ int main()
 	pcl::visualization::CloudViewer p_viewer("paralle planes cloud");
 	p_viewer.showCloud(cloud_planes);
 
+	// Compute different angle
+	float angle = acos(coefficients_plane->values[2]) * 180 / M_PI;
+	if (coefficients_plane->values[0] < 0 && coefficients_plane->values[1]<0)
+	{
+		angle = -angle;
+	}
+	std::cerr << "Different angle between camera and object is: " << angle << std::endl;
+
+	// Filtering outliers points using PlaneClipper3D
+	
+	
 	system("pause");
 
     return 0;
