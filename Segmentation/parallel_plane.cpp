@@ -1,14 +1,17 @@
 #include "stdafx.h"
-#include <math.h>
 #include <stdlib.h>
+#include <math.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/ModelCoefficients.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/PassThrough.h>
-#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/project_inliers.h>
+#include <pcl/surface/concave_hull.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/sample_consensus/method_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/visualization/cloud_viewer.h>
 
 int main()
@@ -82,7 +85,26 @@ int main()
 	}
 	std::cerr << "Different angle between camera and object is: " << angle << std::endl;
 
-	// Filtering outliers points using PlaneClipper3D
+		// Project the model inliers
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_projected(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::ProjectInliers<pcl::PointXYZ> proj;
+	proj.setModelType(pcl::SACMODEL_PLANE);
+	proj.setIndices(inliers_plane);
+	proj.setInputCloud(cloud_filtered);
+	proj.setModelCoefficients(coefficients_plane);
+	proj.filter(*cloud_projected);
+	std::cerr << "PointCloud after projection has: "
+		<< cloud_projected->points.size() << " data points." << std::endl;
+
+	// Create a Concave Hull representation of the projected inliers
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::ConcaveHull<pcl::PointXYZ> chull;
+	chull.setInputCloud(cloud_projected);
+	chull.setAlpha(0.1);
+	chull.reconstruct(*cloud_hull);
+	std::cerr << "Concave hull has: " << cloud_hull->points.size()
+		<< " data points." << std::endl;
+
 	
 	
 	system("pause");
