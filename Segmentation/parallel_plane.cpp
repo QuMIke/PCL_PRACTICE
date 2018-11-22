@@ -105,7 +105,8 @@ int main()
 	std::cerr << "Concave hull has: " << cloud_hull->points.size()
 		<< " data points." << std::endl;
 
-	
+	pcl::visualization::CloudViewer h_viewer("Hull cloud");
+	h_viewer.showCloud(cloud_hull);
 	
 	system("pause");
 
